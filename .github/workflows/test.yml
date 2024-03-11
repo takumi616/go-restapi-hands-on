@@ -1,0 +1,27 @@
+on:
+    #Run workflows when a commit is pushed to main branch.
+    push:
+      branches:
+        - "main"
+    #Run workflows when pull request is created or updated.
+    pull_request:
+name: test
+jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+      #Install and set up golang on runner
+      - name: Set up golang
+        uses: actions/setup-go@v5
+        with:
+            go-version: '>=1.20'
+      #Check out my repository and download it to runner 
+      #to run actions against my code.
+      - name: Checkout
+        uses: actions/checkout@v4
+      #Generate test coverage
+      - name: Run tests with coverage report output
+        run: go test ./... -coverprofile=coverage.out
+      #Report test coverage 
+      - name: Report coverage
+        uses: k1LoW/octocov-action@v1

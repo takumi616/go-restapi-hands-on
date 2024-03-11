@@ -1,0 +1,28 @@
+# .octocov.yml Go example
+coverage:
+  #Path to coverage report generated in test.
+  paths:
+    - coverage.out
+#Ratio of normal go file and test file
+codeToTestRatio:
+  code:
+    - '**/*.go'
+    #Not include *_test.go file
+    - '!**/*_test.go'
+  test:
+    - '**/*_test.go'
+#Record test execution time
+testExecutionTime:
+  if: true
+diff:
+  #Get artifact from repository to compare diff
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+summary:
+  if: true
+comment:
+  if: is_pull_request
+report:
+  if: is_default_branch
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
