@@ -6,12 +6,27 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 
+	"github.com/takumi616/go-restapi-hands-on/config"
 	"golang.org/x/sync/errgroup"
 )
 
-func run(ctx context.Context, l net.Listener) error {
+func run(ctx context.Context) error {
+	//Get environment variables
+	cfg, err := config.New()
+	if err != nil {
+		return err
+	}
+
+	//Create http listener with port received from config file
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
+	if err != nil {
+		log.Fatalf("Failed to listen port %d: %v", cfg.Port, err)
+	}
+
+	url := fmt.Sprintf("http://%s", l.Addr().String())
+	log.Printf("Start with: %v", url)
+
 	//Create http server config
 	s := &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,19 +56,7 @@ func run(ctx context.Context, l net.Listener) error {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Printf("need port number\n")
-		os.Exit(1)
-	}
-
-	//Create http listener with port received from os argument
-	p := os.Args[1]
-	l, err := net.Listen("tcp", ":"+p)
-	if err != nil {
-		log.Fatalf("Failed to listen port %s: %v", p, err)
-	}
-
-	err = run(context.Background(), l)
+	err := run(context.Background())
 	if err != nil {
 		log.Printf("Failed to terminate server: %v", err)
 	}
