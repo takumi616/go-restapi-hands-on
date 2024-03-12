@@ -18,7 +18,7 @@ import (
 func run(ctx context.Context) error {
 	//Create ctx with stop signal
 	//Server sends response that connection is closed
-	//before finishing proccess by these signals
+	//before finishing process by these signals
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
