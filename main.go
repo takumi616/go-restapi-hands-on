@@ -6,12 +6,22 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/takumi616/go-restapi-hands-on/config"
 	"golang.org/x/sync/errgroup"
 )
 
 func run(ctx context.Context) error {
+	//Create ctx with stop signal
+	//Server sends response that connection is closed
+	//before finishing process by these signals
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	//Get environment variables
 	cfg, err := config.New()
 	if err != nil {
@@ -30,6 +40,7 @@ func run(ctx context.Context) error {
 	//Create http server config
 	s := &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(5 * time.Second)
 			fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
 		}),
 	}
