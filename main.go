@@ -5,23 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/takumi616/go-restapi-hands-on/config"
-	"golang.org/x/sync/errgroup"
 )
 
 func run(ctx context.Context) error {
-	//Create ctx with stop signal
-	//Server sends response that connection is closed
-	//before finishing process by these signals
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	//Get environment variables
 	cfg, err := config.New()
 	if err != nil {
@@ -37,33 +25,14 @@ func run(ctx context.Context) error {
 	url := fmt.Sprintf("http://%s", l.Addr().String())
 	log.Printf("Start with: %v", url)
 
-	//Create http server config
-	s := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(5 * time.Second)
-			fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
-		}),
-	}
+	//Get routing info
+	mux := NewMux()
 
-	//Run http server in another groutine
-	//to be able to stop it from external action
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		if err := s.Serve(l); err != nil &&
-			err != http.ErrServerClosed {
-			log.Printf("Failed to close: %+v", err)
-			return err
-		}
-		return nil
-	})
+	//Get Server config
+	s := NewServer(l, mux)
 
-	//Wait until ctx is canceled
-	<-ctx.Done()
-	if err := s.Shutdown(context.Background()); err != nil {
-		log.Printf("Failed to shutdown: %+v", err)
-	}
-
-	return eg.Wait()
+	//Start http server
+	return s.Run(ctx)
 }
 
 func main() {
