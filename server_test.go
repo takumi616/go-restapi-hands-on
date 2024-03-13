@@ -11,14 +11,17 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func TestRun(t *testing.T) {
-	t.Skip("Refactoring now")
-
+func TestServer_Run(t *testing.T) {
 	//Create http listener
 	l, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("Failed to listen port %v", err)
 	}
+
+	//Create handler
+	mux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
+	})
 
 	//Create ctx with cancel func to test if http server will be stopped
 	//by external action intentionally
@@ -27,7 +30,8 @@ func TestRun(t *testing.T) {
 	//Run http server in another groutine
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		return run(ctx)
+		s := NewServer(l, mux)
+		return s.Run(ctx)
 	})
 
 	//Test if http server works correctly
