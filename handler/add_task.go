@@ -3,15 +3,16 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/jmoiron/sqlx"
 	"github.com/takumi616/go-restapi-hands-on/entity"
 	"github.com/takumi616/go-restapi-hands-on/store"
 )
 
 type AddTask struct {
-	Store     *store.TaskStore
+	DB        *sqlx.DB
+	Repo      *store.Repository
 	Validator *validator.Validate
 }
 
@@ -41,13 +42,12 @@ func (at *AddTask) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	//Set request body to Task entity type
 	t := &entity.Task{
-		Title:   b.Title,
-		Status:  entity.TaskStatusTodo,
-		Created: time.Now(),
+		Title:  b.Title,
+		Status: entity.TaskStatusTodo,
 	}
 
 	//Store request data to db
-	id, err := store.Tasks.Add(t)
+	err = at.Repo.AddTask(ctx, at.DB, t)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{
 			Message: err.Error(),
@@ -57,7 +57,7 @@ func (at *AddTask) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	//Create json response body writing newly created record's id
 	rsp := struct {
-		ID int `json:"id"`
-	}{ID: int(id)}
+		ID entity.TaskID `json:"id"`
+	}{ID: t.ID}
 	RespondJSON(ctx, w, rsp, http.StatusOK)
 }

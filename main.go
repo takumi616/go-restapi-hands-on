@@ -26,7 +26,12 @@ func run(ctx context.Context) error {
 	log.Printf("Start with: %v", url)
 
 	//Get routing info
-	mux := NewMux()
+	mux, cleanup, err := NewMux(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	//Close *sql.DB
+	defer cleanup()
 
 	//Get Server config
 	s := NewServer(l, mux)
