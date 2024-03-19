@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/takumi616/go-restapi-hands-on/config"
 )
 
 func TestNewMux(t *testing.T) {
@@ -13,8 +16,13 @@ func TestNewMux(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/health", nil)
 
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatal()
+	}
+
 	//Get routing
-	sut := NewMux()
+	sut, _, _ := NewMux(context.Background(), cfg)
 	//Send http request
 	sut.ServeHTTP(w, r)
 	//Get http response

@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
+	"github.com/takumi616/go-restapi-hands-on/clock"
+	"github.com/takumi616/go-restapi-hands-on/config"
 	"github.com/takumi616/go-restapi-hands-on/handler"
 	"github.com/takumi616/go-restapi-hands-on/store"
 )
 
-func NewMux() http.Handler {
+func NewMux(ctx context.Context, cfg *config.Config) (http.Handler, func(), error) {
 	mux := chi.NewRouter()
 
 	//An endpoint to check if http server is running correctly
@@ -21,11 +24,18 @@ func NewMux() http.Handler {
 	//Create validator
 	v := validator.New()
 
+	//Get DB handle
+	db, cleanup, err := store.New(ctx, cfg)
+	if err != nil {
+		return nil, cleanup, err
+	}
+
+	r := store.Repository{Clocker: clock.RealClocker{}}
 	//Register http handler
-	at := &handler.AddTask{Store: store.Tasks, Validator: v}
+	at := &handler.AddTask{DB: db, Repo: &r, Validator: v}
 	mux.Post("/tasks", at.ServeHTTP)
-	lt := &handler.ListTask{Store: store.Tasks}
+	lt := &handler.ListTask{DB: db, Repo: &r}
 	mux.Get("/tasks", lt.ServeHTTP)
 
-	return mux
+	return mux, cleanup, nil
 }
