@@ -26,10 +26,12 @@ func run(ctx context.Context) error {
 	log.Printf("Start with: %v", url)
 
 	//Get routing info
+	//cleanup is used to close *sql.DB
 	mux, cleanup, err := NewMux(ctx, cfg)
 	if err != nil {
 		return err
 	}
+
 	//Close *sql.DB
 	defer cleanup()
 

@@ -25,6 +25,7 @@ func NewMux(ctx context.Context, cfg *config.Config) (http.Handler, func(), erro
 	v := validator.New()
 
 	//Get DB handle
+	//cleanup is used to close *sql.DB
 	db, cleanup, err := store.New(ctx, cfg)
 	if err != nil {
 		return nil, cleanup, err
