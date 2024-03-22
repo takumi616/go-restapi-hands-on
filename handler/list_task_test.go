@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +12,6 @@ import (
 )
 
 func TestListTask(t *testing.T) {
-	t.SkipNow()
 	type want struct {
 		status  int
 		rspFile string
@@ -18,20 +19,20 @@ func TestListTask(t *testing.T) {
 
 	//Prepare two test case (ok and empty response data pattern)
 	tests := map[string]struct {
-		tasks map[entity.TaskID]*entity.Task
+		tasks []*entity.Task
 		want  want
 	}{
 		"ok": {
-			tasks: map[entity.TaskID]*entity.Task{
-				1: {
+			tasks: []*entity.Task{
+				{
 					ID:     1,
 					Title:  "test1",
-					Status: "todo",
+					Status: entity.TaskStatusTodo,
 				},
-				2: {
+				{
 					ID:     2,
 					Title:  "test2",
-					Status: "done",
+					Status: entity.TaskStatusDone,
 				},
 			},
 			want: want{
@@ -40,13 +41,14 @@ func TestListTask(t *testing.T) {
 			},
 		},
 		"empty": {
-			tasks: map[entity.TaskID]*entity.Task{},
+			tasks: []*entity.Task{},
 			want: want{
 				status:  http.StatusOK,
 				rspFile: "testdata/list_task/empty_rsp.json.golden",
 			},
 		},
 	}
+
 	for n, tt := range tests {
 		tt := tt
 		//Execute as parallel tests
@@ -55,11 +57,19 @@ func TestListTask(t *testing.T) {
 
 			//Create test http request and response writer
 			w := httptest.NewRecorder()
-			//r := httptest.NewRequest(http.MethodGet, "/tasks", nil)
+			r := httptest.NewRequest(http.MethodGet, "/tasks", nil)
+
+			moq := &ListTasksServiceMock{}
+			moq.ListTasksFunc = func(ctx context.Context) (entity.Tasks, error) {
+				if tt.tasks != nil {
+					return tt.tasks, nil
+				}
+				return nil, errors.New("error from mock")
+			}
 
 			//Send http request
-			//sut := ListTask{Store: &store.TaskStore{Tasks: tt.tasks}}
-			//sut.ServeHTTP(w, r)
+			sut := ListTask{Service: moq}
+			sut.ServeHTTP(w, r)
 
 			//Check http response body
 			resp := w.Result()

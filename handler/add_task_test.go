@@ -1,15 +1,19 @@
 package handler
 
 import (
+	"bytes"
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/takumi616/go-restapi-hands-on/entity"
 	"github.com/takumi616/go-restapi-hands-on/testutil"
 )
 
 func TestAddTask(t *testing.T) {
-	t.SkipNow()
 	type want struct {
 		status  int
 		rspFile string
@@ -44,17 +48,28 @@ func TestAddTask(t *testing.T) {
 
 			//Create test http request and response writer
 			w := httptest.NewRecorder()
-			//r := httptest.NewRequest(
-			//	http.MethodPost,
-			//	"/tasks",
-			//	bytes.NewReader(testutil.LoadFile(t, tt.reqFile)),
-			//)
+			r := httptest.NewRequest(
+				http.MethodPost,
+				"/tasks",
+				bytes.NewReader(testutil.LoadFile(t, tt.reqFile)),
+			)
+
+			moq := &AddTaskServiceMock{}
+			moq.AddTaskFunc = func(
+				ctx context.Context, title string,
+			) (*entity.Task, error) {
+				if tt.want.status == http.StatusOK {
+					return &entity.Task{ID: 1}, nil
+				}
+				return nil, errors.New("error from mock")
+			}
 
 			//Send http request
-			//sut := AddTask{Store: &store.TaskStore{
-			//	Tasks: map[entity.TaskID]*entity.Task{},
-			//}, Validator: validator.New()}
-			//sut.ServeHTTP(w, r)
+			sut := AddTask{
+				Service:   moq,
+				Validator: validator.New(),
+			}
+			sut.ServeHTTP(w, r)
 
 			//Check http response body
 			resp := w.Result()

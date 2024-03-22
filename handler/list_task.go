@@ -3,14 +3,11 @@ package handler
 import (
 	"net/http"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/takumi616/go-restapi-hands-on/entity"
-	"github.com/takumi616/go-restapi-hands-on/store"
 )
 
 type ListTask struct {
-	DB   *sqlx.DB
-	Repo *store.Repository
+	Service ListTasksService
 }
 
 type task struct {
@@ -23,8 +20,8 @@ type task struct {
 func (lt *ListTask) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	//Get all tasks from db
-	tasks, err := lt.Repo.ListTasks(ctx, lt.DB)
+	//Call service layer method using interface
+	tasks, err := lt.Service.ListTasks(ctx)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{
 			Message: err.Error(),
