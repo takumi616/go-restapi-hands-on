@@ -52,7 +52,12 @@ func TestListTask(t *testing.T) {
 	for n, tt := range tests {
 		tt := tt
 		//Execute as parallel tests
+		//Run runs function as a subtest of t called name n(first parameter of Run).
+		//It runs function in a separate goroutine and blocks
+		//until this function returns or calls t.Parallel to become a parallel test.
 		t.Run(n, func(t *testing.T) {
+			//Parallel signals that this test is to be run in parallel
+			//with (and only with) other parallel tests.
 			t.Parallel()
 
 			//Create test http request and response writer
